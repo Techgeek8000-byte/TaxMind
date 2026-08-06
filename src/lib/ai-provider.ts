@@ -1,9 +1,9 @@
 // ============================================================
 // TaxMind Pakistan - AI Provider (Vercel-Compatible)
 // ============================================================
-// Supports: Google Gemini, xAI Grok, OpenAI GPT-4o-mini
+// Supports: Hugging Face (FREE), Google Gemini, xAI Grok, OpenAI
 // All calls are plain HTTP fetch — works in Vercel serverless functions.
-// Priority: GEMINI_API_KEY > XAI_API_KEY > OPENAI_API_KEY > fallback
+// Priority: HF_API_KEY > GEMINI_API_KEY > XAI_API_KEY > OPENAI_API_KEY > fallback
 // ============================================================
 
 interface TaxExtraction {
@@ -64,8 +64,54 @@ Rules:
 - For CNIC: format as 00000-0000000-0
 - Set confidence based on document clarity (1.0 = perfectly clear, 0.5 = partially readable, 0.1 = very unclear)
 - For Pakistani salary slips, look for: basic salary, house rent, conveyance, medical, utilities, bonus, tax deducted
-- For bank statements, look for: profit/p Markup, withholding tax, account title
+- For bank statements, look for: profit/ Markup, withholding tax, account title
 - For tax returns, look for: total income, tax payable, tax already paid, tax refund`;
+
+// ─── Hugging Face Provider (FREE — works in Pakistan) ──────────
+async function analyzeWithHuggingFace(base64Content: string, mimeType: string): Promise<TaxExtraction> {
+  const apiKey = process.env.HF_API_KEY;
+  if (!apiKey) throw new Error('HF_API_KEY not set');
+
+  const model = process.env.HF_MODEL || 'Qwen/Qwen2.5-VL-7B-Instruct';
+
+  const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: EXTRACTION_PROMPT },
+            {
+              type: 'image_url',
+              image_url: {
+                url: `data:${mimeType};base64,${base64Content}`,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4096,
+      temperature: 0.1,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Hugging Face API error (${response.status}): ${err}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('Hugging Face returned empty response');
+
+  return parseAIResponse(content);
+}
 
 // ─── Google Gemini Provider ─────────────────────────────────
 async function analyzeWithGemini(base64Content: string, mimeType: string): Promise<TaxExtraction> {
@@ -83,12 +129,7 @@ async function analyzeWithGemini(base64Content: string, mimeType: string): Promi
         contents: [{
           parts: [
             { text: EXTRACTION_PROMPT },
-            {
-              inlineData: {
-                mimeType,
-                data: base64Content,
-              },
-            },
+            { inlineData: { mimeType, data: base64Content } },
           ],
         }],
         generationConfig: {
@@ -134,10 +175,7 @@ async function analyzeWithGrok(base64Content: string, mimeType: string): Promise
             { type: 'text', text: EXTRACTION_PROMPT },
             {
               type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${base64Content}`,
-                detail: 'high',
-              },
+              image_url: { url: `data:${mimeType};base64,${base64Content}`, detail: 'high' },
             },
           ],
         },
@@ -181,10 +219,7 @@ async function analyzeWithOpenAI(base64Content: string, mimeType: string): Promi
             { type: 'text', text: EXTRACTION_PROMPT },
             {
               type: 'image_url',
-              image_url: {
-                url: `data:${mimeType};base64,${base64Content}`,
-                detail: 'high',
-              },
+              image_url: { url: `data:${mimeType};base64,${base64Content}`, detail: 'high' },
             },
           ],
         },
@@ -240,7 +275,6 @@ function parseAIResponse(raw: string): TaxExtraction {
       confidence: parsed.confidence || 0.5,
     };
   } catch {
-    // If JSON parsing fails, return a structured fallback
     return {
       documentType: null,
       taxYear: null,
@@ -268,7 +302,18 @@ function parseAIResponse(raw: string): TaxExtraction {
 
 // ─── Main Export ─────────────────────────────────────────────
 export async function analyzeDocument(base64Content: string, mimeType: string): Promise<TaxExtraction> {
-  // Priority 1: Google Gemini (free tier available, cheapest)
+  // Priority 1: Hugging Face (FREE, works in Pakistan, no credit card)
+  if (process.env.HF_API_KEY) {
+    try {
+      const result = await analyzeWithHuggingFace(base64Content, mimeType);
+      result._provider = 'huggingface';
+      return result;
+    } catch (error: any) {
+      console.error('Hugging Face analysis failed:', error.message);
+    }
+  }
+
+  // Priority 2: Google Gemini (free tier, may not work in Pakistan)
   if (process.env.GEMINI_API_KEY) {
     try {
       const result = await analyzeWithGemini(base64Content, mimeType);
@@ -276,11 +321,10 @@ export async function analyzeDocument(base64Content: string, mimeType: string): 
       return result;
     } catch (error: any) {
       console.error('Gemini analysis failed:', error.message);
-      // Fall through to Grok
     }
   }
 
-  // Priority 2: xAI Grok (fast, strong vision, affordable)
+  // Priority 3: xAI Grok (fast, strong vision, affordable)
   if (process.env.XAI_API_KEY) {
     try {
       const result = await analyzeWithGrok(base64Content, mimeType);
@@ -288,11 +332,10 @@ export async function analyzeDocument(base64Content: string, mimeType: string): 
       return result;
     } catch (error: any) {
       console.error('xAI Grok analysis failed:', error.message);
-      // Fall through to OpenAI
     }
   }
 
-  // Priority 3: OpenAI GPT-4o-mini (very cheap, reliable)
+  // Priority 4: OpenAI GPT-4o-mini (paid, reliable)
   if (process.env.OPENAI_API_KEY) {
     try {
       const result = await analyzeWithOpenAI(base64Content, mimeType);
@@ -300,11 +343,10 @@ export async function analyzeDocument(base64Content: string, mimeType: string): 
       return result;
     } catch (error: any) {
       console.error('OpenAI analysis failed:', error.message);
-      // Fall through to fallback
     }
   }
 
-  // No API key configured — return helpful fallback
+  // No API key configured
   return {
     documentType: null,
     taxYear: null,
@@ -323,7 +365,7 @@ export async function analyzeDocument(base64Content: string, mimeType: string): 
     exemptions: null,
     bankName: null,
     accountTitle: null,
-    summary: 'AI analysis is not configured. Set GEMINI_API_KEY, XAI_API_KEY, or OPENAI_API_KEY in your environment variables. The tax calculator and optimizer work independently — you can enter data manually.',
+    summary: 'AI analysis is not configured. Set HF_API_KEY (free from huggingface.co) in your environment variables. The tax calculator and optimizer work independently — you can enter data manually.',
     rawText: null,
     confidence: 0,
     _provider: 'none',
