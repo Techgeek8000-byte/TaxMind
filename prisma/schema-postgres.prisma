@@ -1,0 +1,120 @@
+// ============================================================
+// TaxMind Pakistan - PostgreSQL Schema for Vercel Deployment
+// ============================================================
+// This schema is identical to schema.prisma but uses PostgreSQL
+// instead of SQLite. Use this for Vercel/production deployments.
+//
+// To switch:
+//   cp prisma/schema-postgres.prisma prisma/schema.prisma
+//   npx prisma db push
+//   npx prisma generate
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  company       String?
+  passwordHash  String
+  role          String   @default("user") // admin, user
+  isActive      Boolean  @default(true)
+  lastLogin     DateTime?
+  failedAttempts Int     @default(0)
+  lockedUntil   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  documents     Document[]
+  taxCalculations TaxCalculation[]
+  auditLogs     AuditLog[]
+}
+
+model Document {
+  id            String   @id @default(cuid())
+  userId        String
+  fileName      String
+  fileType      String   // image/png, application/pdf, etc.
+  fileSize      Int
+  filePath      String
+  analysisResult String?  // JSON string of AI analysis results
+  status        String   @default("uploaded") // uploaded, analyzing, completed, failed
+  uploadedAt    DateTime @default(now())
+  analyzedAt    DateTime?
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TaxCalculation {
+  id              String   @id @default(cuid())
+  userId          String
+  taxYear         String   // e.g., "2024-2025"
+  filingType      String   // salary, business, aop, company
+
+  // Income details (stored as JSON strings)
+  salaryIncome    String?  // JSON
+  businessIncome  String?  // JSON
+  propertyIncome  String?  // JSON
+  capitalGains    String?  // JSON
+  otherIncome     String?  // JSON
+
+  // Deductions
+  allowedDeductions String? // JSON
+  taxCredits      String?  // JSON
+
+  // Results
+  grossIncome     Float
+  taxableIncome   Float
+  taxComputed     Float
+  taxCreditsApplied Float?
+  taxPayable      Float
+  taxAlreadyPaid  Float    @default(0)
+  taxDue          Float
+
+  // Optimization
+  optimizationStrategies String? // JSON
+  savingsAchieved  Float?
+  originalTax      Float?
+
+  // Report
+  reportGenerated  Boolean  @default(false)
+  reportPath       String?
+
+  status          String   @default("draft") // draft, completed, filed
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // login, logout, upload, calculate, export, etc.
+  details     String?  // JSON
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model TaxGuide {
+  id          String   @id @default(cuid())
+  title       String
+  category    String   // income_tax, sales_tax, withholding, exemptions, credits
+  content     String   // Markdown content
+  section     String?  // FBR section reference
+  taxYear     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
