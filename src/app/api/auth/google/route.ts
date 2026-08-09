@@ -5,7 +5,7 @@ import { createToken, setSessionCookie } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
 
 // Google's public keys URL (cached JWK set)
-const GOOGLE JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs'
+const GOOGLE_JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs'
 
 interface GooglePayload {
   email: string
