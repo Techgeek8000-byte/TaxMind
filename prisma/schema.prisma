@@ -36,7 +36,7 @@ model Document {
   fileType     String
   fileSize     Int
   fileUrl      String?
-  extractedData Json?   @default(null)
+  extractedData Json?
   status       String   @default("pending") // pending, processed, failed
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -85,7 +85,7 @@ model AuditLog {
   userId    String?
   action    String
   resource  String?
-  details   Json?    @default(null)
+  details   Json?
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
