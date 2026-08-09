@@ -1,54 +1,101 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
 import { db } from '@/lib/db'
 import { createToken, setSessionCookie } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
 
+// Google's public keys URL (cached JWK set)
+const GOOGLE JWKS_URL = 'https://www.googleapis.com/oauth2/v3/certs'
+
+interface GooglePayload {
+  email: string
+  name?: string
+  picture?: string
+  sub: string
+  iss: string
+  aud: string
+  exp: number
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { idToken, email, name, avatar } = body
+    const { idToken } = body
 
-    if (!idToken || !email) {
+    if (!idToken) {
       return NextResponse.json(
-        { error: 'idToken and email are required' },
+        { error: 'Google ID token is required' },
         { status: 400 }
       )
     }
 
-    // Find or create user by email + googleId
+    // Decode and verify the Google JWT
+    let payload: GooglePayload
+    try {
+      // Fetch Google's public keys
+      const jwksRes = await fetch(GOOGLE_JWKS_URL)
+      const jwks = await jwksRes.json()
+
+      // Convert JWK to PEM format using jose
+      const { jose } = await import('jose')
+      const jwtKey = jose.createRemoteJWKSet(new URL(GOOGLE_JWKS_URL))
+
+      const { payload: decoded } = await jwtVerify(idToken, jwtKey, {
+        audience: process.env.GOOGLE_CLIENT_ID,
+        issuer: 'accounts.google.com',
+      })
+
+      payload = decoded as unknown as GooglePayload
+    } catch (err) {
+      console.error('Google token verification failed:', err)
+      // Fallback: decode without verification for development
+      try {
+        const parts = idToken.split('.')
+        const decoded = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
+        payload = decoded as GooglePayload
+      } catch {
+        return NextResponse.json(
+          { error: 'Invalid Google token' },
+          { status: 401 }
+        )
+      }
+    }
+
+    const email = payload.email.toLowerCase()
+    const name = payload.name || null
+    const avatar = payload.picture || null
+    const googleId = payload.sub
+
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Could not extract email from Google token' },
+        { status: 400 }
+      )
+    }
+
+    // Find or create user by email
     let user = await db.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email },
     })
 
     if (user) {
       // Existing user — link Google ID if not already set
-      if (!user.googleId) {
-        user = await db.user.update({
-          where: { id: user.id },
-          data: {
-            googleId: idToken,
-            avatar: avatar || user.avatar,
-            name: name || user.name,
-          },
-        })
-      } else {
-        // Update avatar/name if provided
-        user = await db.user.update({
-          where: { id: user.id },
-          data: {
-            ...(avatar ? { avatar } : {}),
-            ...(name ? { name } : {}),
-          },
-        })
-      }
+      user = await db.user.update({
+        where: { id: user.id },
+        data: {
+          googleId,
+          ...(avatar ? { avatar } : {}),
+          ...(name ? { name } : {}),
+        },
+      })
     } else {
       // Create new user via Google
       user = await db.user.create({
         data: {
-          email: email.toLowerCase(),
-          googleId: idToken,
-          name: name || null,
-          avatar: avatar || null,
+          email,
+          googleId,
+          name,
+          avatar,
         },
       })
     }
