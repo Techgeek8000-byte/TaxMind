@@ -26,7 +26,13 @@ const createGuideSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Admin-only — auth skipped for now
+    // Auth required for creating guides
+    const { getSession } = await import('@/lib/auth')
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
     const parsed = createGuideSchema.safeParse(body)
 

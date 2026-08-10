@@ -29,33 +29,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Decode and verify the Google JWT
     let payload: GooglePayload
-    try {
-      // Fetch Google's public keys
-      const { createRemoteJWKSet } = await import('jose')
-      const jwtKey = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL))
+    // Verify the Google JWT — NEVER fall back to unverified decoding
+    const { createRemoteJWKSet } = await import('jose')
+    const jwtKey = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL))
 
-      const { payload: decoded } = await jwtVerify(idToken, jwtKey, {
-        audience: process.env.GOOGLE_CLIENT_ID,
-        issuer: 'accounts.google.com',
-      })
+    const { payload: decoded } = await jwtVerify(idToken, jwtKey, {
+      audience: process.env.GOOGLE_CLIENT_ID,
+      issuer: 'accounts.google.com',
+    })
 
-      payload = decoded as unknown as GooglePayload
-    } catch (err) {
-      console.error('Google token verification failed:', err)
-      // Fallback: decode without verification for development
-      try {
-        const parts = idToken.split('.')
-        const decoded = JSON.parse(Buffer.from(parts[1], 'base64url').toString())
-        payload = decoded as GooglePayload
-      } catch {
-        return NextResponse.json(
-          { error: 'Invalid Google token' },
-          { status: 401 }
-        )
-      }
-    }
+    payload = decoded as unknown as GooglePayload
 
     const email = payload.email.toLowerCase()
     const name = payload.name || null

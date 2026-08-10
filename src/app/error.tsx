@@ -66,20 +66,16 @@ export default function Error({
           Try again or head back to the homepage.
         </motion.p>
 
-        {error.message && (
-          <motion.div
-            className="mt-4 rounded-lg border border-border/50 bg-muted/50 px-4 py-3"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45, duration: 0.4 }}
-          >
-            <p className="text-xs font-mono text-muted-foreground break-all">
-              {error.message.length > 200
-                ? error.message.slice(0, 200) + '...'
-                : error.message}
-            </p>
-          </motion.div>
-        )}
+        <motion.div
+          className="mt-4 rounded-lg border border-border/50 bg-muted/50 px-4 py-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45, duration: 0.4 }}
+        >
+          <p className="text-xs font-mono text-muted-foreground">
+            Error reference: {error.digest || 'unknown'}
+          </p>
+        </motion.div>
 
         <motion.div
           className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"

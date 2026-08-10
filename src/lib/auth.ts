@@ -2,8 +2,12 @@ import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 
+const _JWT_SECRET_RAW = process.env.JWT_SECRET
+if (!_JWT_SECRET_RAW) {
+  console.warn('[TaxMind] WARNING: JWT_SECRET is not set. Using an insecure default — this MUST be changed in production.')
+}
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'taxmind-pakistan-secret-key-change-in-production'
+  _JWT_SECRET_RAW || 'taxmind-pakistan-dev-only-insecure-key'
 )
 const COOKIE_NAME = 'taxmind-session'
 
@@ -69,8 +73,8 @@ export async function setSessionCookie(token: string) {
   })
 }
 
-export function clearSessionCookie() {
-  const cookieStore = cookies()
+export async function clearSessionCookie() {
+  const cookieStore = await cookies()
   cookieStore.delete(COOKIE_NAME)
 }
 

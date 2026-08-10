@@ -30,12 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files
 .env*
 
 # vercel
 .vercel
-
 
 # typescript
 *.tsbuildinfo
@@ -46,13 +45,29 @@ local-*
 *.log
 dev.log
 dev.out.log
-test
-prompt
-
 server.log
+
 # Skills directory
 /skills/
+
+# Z.ai scripts & artifacts
 .zscripts/
 mini-services/
 scripts/
 worklog.md
+
+# Uploaded files & tool output
+upload/
+tool-results/
+
+# Database files
+db/*.db
+
+# Lock file conflict — using npm
+bun.lock
+
+# Downloaded artifacts
+download/
+
+# Root-level process files
+3000
