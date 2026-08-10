@@ -20,7 +20,14 @@ export const metadata: Metadata = {
   keywords: ["Pakistan tax", "FBR", "ITO 2001", "tax calculator", "tax optimization", "salary tax Pakistan", "business tax Pakistan"],
   authors: [{ name: "TaxMind Pakistan" }],
   icons: {
-    icon: "/logo.svg",
+    icon: "/icon.svg",
+    apple: "/icon.svg",
+  },
+  openGraph: {
+    title: "TaxMind Pakistan — AI-Powered Tax Optimization",
+    description: "Smart tax optimization platform for Pakistan's FBR tax system.",
+    siteName: "TaxMind Pakistan",
+    type: "website",
   },
 };
 

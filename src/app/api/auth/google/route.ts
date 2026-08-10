@@ -33,12 +33,8 @@ export async function POST(request: NextRequest) {
     let payload: GooglePayload
     try {
       // Fetch Google's public keys
-      const jwksRes = await fetch(GOOGLE_JWKS_URL)
-      const jwks = await jwksRes.json()
-
-      // Convert JWK to PEM format using jose
-      const { jose } = await import('jose')
-      const jwtKey = jose.createRemoteJWKSet(new URL(GOOGLE_JWKS_URL))
+      const { createRemoteJWKSet } = await import('jose')
+      const jwtKey = createRemoteJWKSet(new URL(GOOGLE_JWKS_URL))
 
       const { payload: decoded } = await jwtVerify(idToken, jwtKey, {
         audience: process.env.GOOGLE_CLIENT_ID,

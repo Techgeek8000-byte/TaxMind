@@ -153,8 +153,8 @@ function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   return (
     <Card className="shadow-lg border-emerald-200/50 dark:border-emerald-800/30">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <span className="text-lg font-bold">TM</span>
+        <div className="mx-auto mb-2">
+          <img src="/icon.svg" alt="TaxMind" className="h-12 w-12 mx-auto" />
         </div>
         <CardTitle className="text-2xl">Welcome Back</CardTitle>
         <CardDescription>Sign in to your TaxMind Pakistan account</CardDescription>
@@ -348,8 +348,8 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   return (
     <Card className="shadow-lg border-emerald-200/50 dark:border-emerald-800/30">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <span className="text-lg font-bold">TM</span>
+        <div className="mx-auto mb-2">
+          <img src="/icon.svg" alt="TaxMind" className="h-12 w-12 mx-auto" />
         </div>
         <CardTitle className="text-2xl">Create Account</CardTitle>
         <CardDescription>Join TaxMind Pakistan for smart tax management</CardDescription>

@@ -430,12 +430,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Leaf className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">
-              Tax<span className="text-primary">Mind</span>
-            </span>
+            <img src="/logo.svg" alt="TaxMind" className="h-9 w-auto" />
           </div>
 
           {/* Desktop nav */}
@@ -472,12 +467,7 @@ export default function LandingPage() {
             <SheetContent side="right" className="w-72">
               <div className="flex flex-col gap-6 mt-8">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <Leaf className="h-5 w-5" />
-                  </div>
-                  <span className="text-xl font-bold tracking-tight">
-                    Tax<span className="text-primary">Mind</span>
-                  </span>
+                  <img src="/logo.svg" alt="TaxMind" className="h-9 w-auto" />
                 </div>
                 <Separator />
                 <nav className="flex flex-col gap-4">
@@ -693,6 +683,136 @@ export default function LandingPage() {
                     </p>
                   </div>
                 </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* ===================== DASHBOARD PREVIEW ===================== */}
+        <section className="relative py-20 md:py-28 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+          <div className="relative container mx-auto px-4">
+            <motion.div
+              className="mx-auto max-w-2xl text-center mb-12"
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: '-80px' }}
+              variants={staggerContainer}
+            >
+              <motion.h2
+                className="text-3xl font-bold tracking-tight sm:text-4xl"
+                variants={fadeInUp}
+                custom={0}
+              >
+                See TaxMind in <span className="text-primary">Action</span>
+              </motion.h2>
+              <motion.p
+                className="mt-4 text-muted-foreground text-lg"
+                variants={fadeInUp}
+                custom={1}
+              >
+                A powerful dashboard designed for Pakistan&apos;s tax system — no clutter, just results.
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="mx-auto max-w-5xl"
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+            >
+              {/* Dashboard Mockup */}
+              <div className="relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm shadow-2xl shadow-primary/5 overflow-hidden">
+                {/* Window Chrome */}
+                <div className="flex items-center gap-2 border-b border-border/50 bg-muted/50 px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <div className="h-3 w-3 rounded-full bg-red-500/80" />
+                    <div className="h-3 w-3 rounded-full bg-yellow-500/80" />
+                    <div className="h-3 w-3 rounded-full bg-green-500/80" />
+                  </div>
+                  <div className="flex-1 flex justify-center">
+                    <div className="rounded-md bg-background/80 border border-border/50 px-4 py-1 text-xs text-muted-foreground">
+                      tax-mind.vercel.app/dashboard
+                    </div>
+                  </div>
+                </div>
+                {/* Dashboard Content Mockup */}
+                <div className="p-6 md:p-8 space-y-6">
+                  {/* Top Stats Row */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Taxable Income', value: 'PKR 2,450,000', change: '+12%', color: 'text-primary' },
+                      { label: 'Tax Computed', value: 'PKR 347,500', change: '-8.2%', color: 'text-emerald-400' },
+                      { label: 'Deductions Found', value: 'PKR 350,000', change: '+PKR 85K', color: 'text-primary' },
+                      { label: 'Effective Rate', value: '14.2%', change: '-2.1%', color: 'text-emerald-400' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-xl border border-border/40 bg-background/50 p-4">
+                        <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
+                        <p className="mt-1 text-lg font-bold tracking-tight">{stat.value}</p>
+                        <p className={`mt-0.5 text-xs font-medium ${stat.color}`}>{stat.change}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Chart + Breakdown Row */}
+                  <div className="grid md:grid-cols-5 gap-4">
+                    {/* Fake Chart Area */}
+                    <div className="md:col-span-3 rounded-xl border border-border/40 bg-background/50 p-5">
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-semibold">Monthly Income vs Tax</p>
+                        <div className="flex gap-3 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Income</span>
+                          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Tax</span>
+                        </div>
+                      </div>
+                      {/* SVG Bar Chart */}
+                      <svg viewBox="0 0 400 120" className="w-full h-auto" preserveAspectRatio="none">
+                        {['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'].map((m, i) => {
+                          const h1 = 30 + Math.sin(i * 0.5) * 20 + Math.random() * 15
+                          const h2 = h1 * (0.12 + Math.random() * 0.06)
+                          return (
+                            <g key={m}>
+                              <rect x={i * 33 + 4} y={110 - h1} width={12} height={h1} rx={3} fill="currentColor" className="text-primary/40" />
+                              <rect x={i * 33 + 18} y={110 - h2} width={12} height={h2} rx={3} fill="currentColor" className="text-emerald-400/60" />
+                              <text x={i * 33 + 17} y={118} textAnchor="middle" className="fill-muted-foreground/60" fontSize="7">{m}</text>
+                            </g>
+                          )
+                        })}
+                      </svg>
+                    </div>
+                    {/* Breakdown List */}
+                    <div className="md:col-span-2 rounded-xl border border-border/40 bg-background/50 p-5">
+                      <p className="text-sm font-semibold mb-3">Optimization Breakdown</p>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Salary Income', pct: 65 },
+                          { label: 'Business Income', pct: 20 },
+                          { label: 'Property Income', pct: 10 },
+                          { label: 'Other Income', pct: 5 },
+                        ].map((item) => (
+                          <div key={item.label}>
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">{item.label}</span>
+                              <span className="font-medium">{item.pct}%</span>
+                            </div>
+                            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400"
+                                style={{ width: `${item.pct}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-border/30">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">Potential Savings</span>
+                          <span className="text-sm font-bold text-primary">PKR 85,000</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
