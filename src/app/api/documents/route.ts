@@ -30,7 +30,15 @@ export async function GET() {
       take: 50,
     })
 
-    return NextResponse.json(documents)
+    // Strip base64 file content from list response to reduce payload size
+    const sanitized = documents.map((doc) => ({
+      ...doc,
+      extractedData: doc.extractedData
+        ? { ...doc.extractedData, _fileContent: undefined }
+        : doc.extractedData,
+    }))
+
+    return NextResponse.json(sanitized)
   } catch (error) {
     console.error('Documents list error:', error)
     return NextResponse.json(
@@ -78,6 +86,16 @@ export async function POST(request: NextRequest) {
           error:
             'Invalid file type. Allowed types: JPEG, PNG, WebP, GIF, PDF.',
         },
+        { status: 400 }
+      )
+    }
+
+    // Secondary validation: check file extension (client MIME type can be spoofed)
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.pdf']
+    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase()
+    if (!allowedExtensions.includes(fileExt)) {
+      return NextResponse.json(
+        { error: 'Invalid file extension. Allowed: .jpg, .jpeg, .png, .webp, .gif, .pdf' },
         { status: 400 }
       )
     }
@@ -130,7 +148,12 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json(document, { status: 201 })
+    // Return document metadata without the base64 file content
+    const { extractedData: rawExtracted, ...docWithoutFileContent } = document
+    return NextResponse.json({ ...docWithoutFileContent, extractedData: {
+      _mimeType: rawExtracted?._mimeType,
+      _guessedDocType: rawExtracted?._guessedDocType,
+    }}, { status: 201 })
   } catch (error) {
     console.error('Document upload error:', error)
     return NextResponse.json(

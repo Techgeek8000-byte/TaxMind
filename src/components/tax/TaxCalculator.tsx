@@ -20,7 +20,7 @@ import {
   RotateCcw,
   ArrowLeft,
   Sparkles,
-  IndianRupee,
+  CircleDollarSign,
   Info,
   PiggyBank,
   AlertTriangle,
@@ -290,7 +290,7 @@ export default function TaxCalculator() {
   // Pre-fill from scanner data
   useEffect(() => {
     try {
-      const scannerData = sessionStorage.getItem('scannerData')
+      const scannerData = sessionStorage.getItem('taxmind_scanner_input')
       if (scannerData) {
         const data = JSON.parse(scannerData)
         if (data.incomeHead) setValue('incomeHead', data.incomeHead)
@@ -313,7 +313,7 @@ export default function TaxCalculator() {
             }))
           }
         }
-        sessionStorage.removeItem('scannerData')
+        sessionStorage.removeItem('taxmind_scanner_input')
       }
     } catch {
       // Ignore parsing errors
@@ -564,7 +564,7 @@ export default function TaxCalculator() {
             <Card className="border-emerald-200/60 bg-white shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg text-emerald-900">
-                  <IndianRupee className="size-5 text-emerald-600" />
+                  <CircleDollarSign className="size-5 text-emerald-600" />
                   Income Details
                 </CardTitle>
                 <CardDescription>

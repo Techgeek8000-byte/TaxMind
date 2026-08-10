@@ -15,6 +15,10 @@ import TaxReports from '@/components/reports/TaxReports'
 import TaxGuides from '@/components/guides/TaxGuides'
 import AuditLog from '@/components/dashboard/AuditLog'
 import TaxChat from '@/components/ai/TaxChat'
+import TaxInsights from '@/components/ai/TaxInsights'
+import TaxYearCompare from '@/components/ai/TaxYearCompare'
+import FilingAssistant from '@/components/ai/FilingAssistant'
+import FloatingAIAssistant from '@/components/ai/FloatingAIAssistant'
 import IrisExport from '@/components/tax/IrisExport'
 import WealthStatement from '@/components/tax/WealthStatement'
 import TaxCalendar from '@/components/dashboard/TaxCalendar'
@@ -24,6 +28,16 @@ import {
   WHT_TYPES,
   formatPKR,
 } from '@/lib/tax-engine'
+import {
+  Percent,
+  TrendingUp,
+  Calculator,
+  ArrowRight,
+  AlertCircle,
+  Info,
+  Users,
+  UserX,
+} from 'lucide-react'
 import type { WithholdingTaxResult, CapitalGainsResult } from '@/lib/tax-engine'
 import {
   Card,
@@ -52,7 +66,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
-import { Percent, TrendingUp, Calculator, ArrowRight, AlertCircle, Info, Users, UserX } from 'lucide-react'
 
 function AuthenticatedApp() {
   const { view } = useAppStore()
@@ -62,6 +75,7 @@ function AuthenticatedApp() {
       <main className="flex-1">
         <ViewRouter view={view} />
       </main>
+      <FloatingAIAssistant />
     </div>
   )
 }
@@ -87,6 +101,12 @@ function ViewRouter({ view }: { view: AppView }) {
       return <AuditLog />
     case 'ai-chat':
       return <TaxChat />
+    case 'ai-insights':
+      return <TaxInsights />
+    case 'ai-compare':
+      return <TaxYearCompare />
+    case 'ai-filing':
+      return <FilingAssistant />
     case 'iris-export':
       return <IrisExport />
     case 'wealth-statement':

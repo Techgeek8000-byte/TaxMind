@@ -14,7 +14,9 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
-    return NextResponse.json(calculations)
+    // Strip raw input JSON from list response (may contain unvalidated fields)
+    const sanitized = calculations.map(({ inputJson, ...rest }) => rest)
+    return NextResponse.json(sanitized)
   } catch (error) {
     console.error('Tax calculations list error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

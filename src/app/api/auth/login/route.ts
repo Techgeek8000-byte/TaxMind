@@ -36,13 +36,8 @@ export async function POST(request: NextRequest) {
 
     // Check if user is locked
     if (user.isLocked && user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-      const remainingMs = new Date(user.lockedUntil).getTime() - Date.now()
-      const remainingMin = Math.ceil(remainingMs / 60000)
       return NextResponse.json(
-        {
-          error: `Account is locked due to too many failed login attempts. Try again in ${remainingMin} minute(s).`,
-          lockedUntil: user.lockedUntil,
-        },
+        { error: 'Account is temporarily locked due to too many failed login attempts. Please try again later.' },
         { status: 423 }
       )
     }
@@ -51,32 +46,29 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await verifyPassword(password, user.passwordHash)
 
     if (!isPasswordValid) {
-      // Increment failed attempts
-      const newFailedAttempts = user.failedAttempts + 1
-      const shouldLock = newFailedAttempts >= LOCKOUT_THRESHOLD
-      const lockedUntil = shouldLock
-        ? new Date(Date.now() + LOCKOUT_DURATION_MS)
-        : null
-
-      await db.user.update({
+      // Use atomic increment to prevent TOCTOU race condition
+      const updated = await db.user.update({
         where: { id: user.id },
         data: {
-          failedAttempts: newFailedAttempts,
-          isLocked: shouldLock,
-          lockedUntil,
+          failedAttempts: { increment: 1 },
         },
+        select: { failedAttempts: true, isLocked: true, lockedUntil: true },
       })
 
-      if (shouldLock) {
+      const shouldLock = updated.failedAttempts >= LOCKOUT_THRESHOLD
+      if (shouldLock && !updated.isLocked) {
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            isLocked: true,
+            lockedUntil: new Date(Date.now() + LOCKOUT_DURATION_MS),
+          },
+        })
         await logAudit({
           userId: user.id,
           action: 'AUTH_LOGIN',
           resource: 'User',
-          details: {
-            success: false,
-            reason: 'Account locked after too many failed attempts',
-            failedAttempts: newFailedAttempts,
-          },
+          details: { success: false, reason: 'Account locked after too many failed attempts', failedAttempts: updated.failedAttempts },
         })
       }
 

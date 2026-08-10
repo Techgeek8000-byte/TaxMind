@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback, type FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
-import { Leaf, Send, RotateCcw, ArrowLeft, MessageSquare, Sparkles } from 'lucide-react'
+import rehypeSanitize from 'rehype-sanitize'
+import { Leaf, Send, RotateCcw, ArrowLeft, MessageSquare, Sparkles, Download, Trash2, FileText } from 'lucide-react'
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -15,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { useAppStore } from '@/store/app'
 
-// ─── Types ──────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────
 
 interface ChatMessage {
   id: string
@@ -25,7 +26,7 @@ interface ChatMessage {
   isError?: boolean
 }
 
-// ─── Constants ──────────────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────
 
 const QUICK_SUGGESTIONS = [
   'How to reduce my salary tax?',
@@ -38,7 +39,7 @@ const QUICK_SUGGESTIONS = [
 
 const SYSTEM_CONTEXT = 'tax-advisor'
 
-// ─── Animation Variants ─────────────────────────────────────────────────
+// ─── Animation Variants ─────────────────────────────────────────
 
 const messageVariants = {
   initial: { opacity: 0, y: 16, scale: 0.97 },
@@ -58,7 +59,7 @@ const dotBounce = {
   }),
 }
 
-// ─── Typing Indicator ───────────────────────────────────────────────────
+// ─── Typing Indicator ───────────────────────────────────────────
 
 function TypingIndicator() {
   return (
@@ -90,7 +91,7 @@ function TypingIndicator() {
   )
 }
 
-// ─── Markdown Code Block ────────────────────────────────────────────────
+// ─── Markdown Code Block ────────────────────────────────────────
 
 function CodeBlock({ children, className }: { children: string; className?: string }) {
   return (
@@ -100,13 +101,15 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   )
 }
 
-// ─── Main Component ─────────────────────────────────────────────────────
+// ─── Main Component ─────────────────────────────────────────────
 
 export default function TaxChat() {
   const { user, setView } = useAppStore()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSummarizing, setIsSummarizing] = useState(false)
+  const [summary, setSummary] = useState('')
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -126,6 +129,17 @@ export default function TaxChat() {
     inputRef.current?.focus()
   }, [])
 
+  // ── Build history for multi-turn context ──
+  const getChatHistory = useCallback(() => {
+    return messages
+      .filter((m) => !m.isError)
+      .slice(-10) // last 10 messages for context
+      .map((m) => ({
+        role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+        content: m.content,
+      }))
+  }, [messages])
+
   // ── Send message handler ──
   const sendMessage = useCallback(
     async (text?: string) => {
@@ -144,6 +158,8 @@ export default function TaxChat() {
       setIsLoading(true)
 
       try {
+        const history = getChatHistory()
+
         const res = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -156,7 +172,7 @@ export default function TaxChat() {
           const aiMsg: ChatMessage = {
             id: crypto.randomUUID(),
             role: 'ai',
-            content: `Sorry, I encountered an error: ${data.error || 'Unknown error'}. Please try again.`,
+            content: 'Sorry, something went wrong. Please try again.',
             timestamp: new Date(),
             isError: true,
           }
@@ -186,8 +202,70 @@ export default function TaxChat() {
         inputRef.current?.focus()
       }
     },
-    [input, isLoading],
+    [input, isLoading, getChatHistory],
   )
+
+  // ── Generate AI Summary ──
+  const handleSummarize = useCallback(async () => {
+    if (messages.length < 2 || isSummarizing) return
+    setIsSummarizing(true)
+    try {
+      const history = getChatHistory()
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `Please provide a concise summary of our entire conversation above. Focus on key tax advice, ITO sections mentioned, and actionable takeaways.`,
+          context: SYSTEM_CONTEXT,
+        }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSummary(data.data.reply)
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setIsSummarizing(false)
+    }
+  }, [messages, isSummarizing, getChatHistory])
+
+  // ── Export chat as text ──
+  const handleExport = useCallback(() => {
+    if (messages.length === 0) return
+    const lines = [
+      'TaxMind AI — Conversation Export',
+      `Date: ${new Date().toLocaleString()}`,
+      'User: ' + (user?.email || 'Unknown'),
+      '─'.repeat(50),
+      '',
+    ]
+    for (const msg of messages) {
+      const time = msg.timestamp.toLocaleTimeString()
+      const role = msg.role === 'user' ? 'You' : 'TaxMind AI'
+      lines.push(`[${time}] ${role}:`)
+      lines.push(msg.content)
+      lines.push('')
+    }
+    if (summary) {
+      lines.push('─'.repeat(50))
+      lines.push('AI Summary:')
+      lines.push(summary)
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `taxmind-chat-${new Date().toISOString().slice(0, 10)}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [messages, summary, user])
+
+  // ── Clear chat ──
+  const clearChat = useCallback(() => {
+    setMessages([])
+    setSummary('')
+  }, [])
 
   // ── Retry last failed message ──
   const retryLastFailed = useCallback(() => {
@@ -220,7 +298,7 @@ export default function TaxChat() {
         .slice(0, 2)
     : 'U'
 
-  // ─── Render ────────────────────────────────────────────────────────────
+  // ─── Render ────────────────────────────────────────────────────
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
@@ -250,7 +328,63 @@ export default function TaxChat() {
           <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
           Online
         </Badge>
+        {/* New action buttons */}
+        {hasMessages && (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleSummarize}
+              disabled={isSummarizing || messages.length < 2}
+              title="AI Summary"
+            >
+              <FileText className={`h-4 w-4 ${isSummarizing ? 'animate-pulse' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={handleExport}
+              title="Export Chat"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={clearChat}
+              title="Clear Chat"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
+
+      {/* Summary Banner */}
+      <AnimatePresence>
+        {summary && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="border-b bg-emerald-50 dark:bg-emerald-950/30 px-4 py-3 sm:px-6"
+          >
+            <div className="flex items-start gap-2">
+              <Sparkles className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-200 mb-1">AI Summary</p>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300 leading-relaxed">{summary}</p>
+              </div>
+              <button onClick={() => setSummary('')} className="text-muted-foreground hover:text-foreground shrink-0">
+                &times;
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages / Empty State */}
       <div className="flex-1 min-h-0">
@@ -352,11 +486,11 @@ export default function TaxChat() {
                         <p className="whitespace-pre-wrap">{msg.content}</p>
                       ) : (
                         <div className="prose prose-sm prose-emerald dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:my-2 [&_ol]:my-2 [&_li]:m-0 [&_h1]:text-base [&_h2]:text-sm [&_h3]:text-sm [&_h1]:mt-3 [&_h1]:mb-1 [&_h2]:mt-3 [&_h2]:mb-1 [&_h3]:mt-2 [&_h3]:mb-1 [&_strong]:text-emerald-700 dark:[&_strong]:text-emerald-400 [&_a]:text-emerald-600 dark:[&_a]:text-emerald-400 [&_code]:text-emerald-700 dark:[&_code]:text-emerald-400 [&_blockquote]:border-l-emerald-500 [&_blockquote]:text-muted-foreground [&_table]:text-xs">
-                          <ReactMarkdown components={{ pre: ({ children }) => <>{children}</>, code: ({ children, className: cn, ...props }) => {
+                          <ReactMarkdown rehypePlugins={[rehypeSanitize]} components={{ pre: ({ children }) => <>{children}</>, code: ({ children, className: cn, ...props }) => {
                             const isBlock = typeof children === 'string' && children.includes('\n')
                             if (isBlock) return <CodeBlock className={cn}>{children as string}</CodeBlock>
                             return (
-                              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono" {...props}>
+                              <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">
                                 {children}
                               </code>
                             )

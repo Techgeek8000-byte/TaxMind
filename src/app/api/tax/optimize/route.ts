@@ -43,6 +43,14 @@ const optimizeBodySchema = z.object({
 
 export async function GET() {
   try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 },
+      )
+    }
+
     return NextResponse.json({
       success: true,
       strategies: TAX_OPTIMIZATION_STRATEGIES,

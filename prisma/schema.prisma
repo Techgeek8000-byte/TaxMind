@@ -8,6 +8,20 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+enum DocumentStatus {
+  pending
+  processed
+  failed
+}
+
+enum IncomeHead {
+  salary
+  business
+  property
+  capital_gains
+  other
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String    @unique
@@ -30,54 +44,61 @@ model User {
 }
 
 model Document {
-  id           String   @id @default(cuid())
+  id           String        @id @default(cuid())
   userId       String
   fileName     String
   fileType     String
   fileSize     Int
   fileUrl      String?
   extractedData Json?
-  status       String   @default("pending") // pending, processed, failed
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  status       DocumentStatus @default(pending)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
 }
 
 model TaxCalculation {
-  id                   String   @id @default(cuid())
+  id                   String      @id @default(cuid())
   userId               String
   taxYear              String
-  incomeHead           String   // salary, business, property, capital_gains, other
+  incomeHead           IncomeHead
   grossIncome          Float
   totalDeductions      Float
   taxableIncome        Float
   taxComputed          Float
-  superTax             Float    @default(0)
-  minimumTax           Float    @default(0)
+  superTax             Float       @default(0)
+  minimumTax           Float       @default(0)
   totalTax             Float
   effectiveRate        Float?
   inputJson            Json
-  filingType           String?  @default("individual")
-  salaryIncome         Float?   @default(0)
-  businessIncome       Float?   @default(0)
-  propertyIncome       Float?   @default(0)
-  capitalGains         Float?   @default(0)
-  otherIncome          Float?   @default(0)
-  allowedDeductions    Json?    @default("[]")
-  taxCreditsApplied    Float?   @default(0)
-  taxPayable           Float?   @default(0)
-  taxAlreadyPaid       Float?   @default(0)
-  taxDue               Float?   @default(0)
-  optimizationStrategies Json?   @default("[]")
-  savingsAchieved      Float?   @default(0)
-  withholdingTax       Float?   @default(0)
-  superTaxBreakdown    Json?    @default("[]")
-  reportGenerated      Boolean? @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  filingType           String?     @default("individual")
+  salaryIncome         Float?      @default(0)
+  businessIncome       Float?      @default(0)
+  propertyIncome       Float?      @default(0)
+  capitalGains         Float?      @default(0)
+  otherIncome          Float?      @default(0)
+  allowedDeductions    Json?       @default("[]")
+  taxCreditsApplied    Float?      @default(0)
+  taxPayable           Float?      @default(0)
+  taxAlreadyPaid       Float?      @default(0)
+  taxDue               Float?      @default(0)
+  optimizationStrategies Json?      @default("[]")
+  savingsAchieved      Float?      @default(0)
+  withholdingTax       Float?      @default(0)
+  superTaxBreakdown    Json?       @default("[]")
+  reportGenerated      Boolean?    @default(false)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
 
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxYear])
+  @@index([incomeHead])
 }
 
 model AuditLog {
@@ -91,6 +112,10 @@ model AuditLog {
   createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }
 
 model TaxGuide {
@@ -98,7 +123,7 @@ model TaxGuide {
   slug        String   @unique
   title       String
   description String
-  content     String   // Markdown content
+  content     String
   category    String
   order       Int      @default(0)
   createdAt   DateTime @default(now())

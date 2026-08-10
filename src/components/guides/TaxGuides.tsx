@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
+import rehypeSanitize from 'rehype-sanitize'
 import {
   BookOpen,
   ArrowLeft,
@@ -314,7 +315,9 @@ export default function TaxGuides() {
         setGuides(data)
       }
     } catch (err) {
-      console.error('Error fetching guides:', err)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error fetching guides:', err)
+      }
     } finally {
       setLoading(false)
     }
@@ -381,7 +384,7 @@ export default function TaxGuides() {
             <Card className="border-emerald-200/60 bg-white shadow-sm">
               <CardContent className="p-4 sm:p-6 lg:p-8">
                 <div className="prose prose-emerald max-w-none prose-headings:text-emerald-900 prose-h2:text-xl prose-h2:font-bold prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-6 prose-h3:mb-3 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-emerald-900 prose-ul:my-4 prose-ol:my-4 prose-li:my-1">
-                  <ReactMarkdown>{selectedGuide.content}</ReactMarkdown>
+                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{selectedGuide.content}</ReactMarkdown>
                 </div>
               </CardContent>
             </Card>

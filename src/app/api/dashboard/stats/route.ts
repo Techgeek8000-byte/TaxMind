@@ -11,17 +11,13 @@ export async function GET() {
 
     const userId = session.userId
 
-    const [totalCalculations, totalDocuments, taxAgg, user, recentCalculations] =
+    const [totalCalculations, totalDocuments, taxAgg, recentCalculations] =
       await Promise.all([
         db.taxCalculation.count({ where: { userId } }),
         db.document.count({ where: { userId } }),
         db.taxCalculation.aggregate({
           where: { userId },
           _sum: { totalTax: true },
-        }),
-        db.user.findUnique({
-          where: { id: userId },
-          select: { isLocked: true, failedAttempts: true },
         }),
         db.taxCalculation.findMany({
           where: { userId },
@@ -35,10 +31,6 @@ export async function GET() {
       totalDocuments,
       totalTaxPaid: taxAgg._sum.totalTax ?? 0,
       recentCalculations,
-      securityStatus: {
-        isLocked: user?.isLocked ?? false,
-        failedAttempts: user?.failedAttempts ?? 0,
-      },
     })
   } catch (error) {
     console.error('Dashboard stats error:', error)

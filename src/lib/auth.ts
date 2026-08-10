@@ -2,13 +2,22 @@ import { SignJWT, jwtVerify } from 'jose'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 
-const _JWT_SECRET_RAW = process.env.JWT_SECRET
-if (!_JWT_SECRET_RAW) {
-  console.warn('[TaxMind] WARNING: JWT_SECRET is not set. Using an insecure default — this MUST be changed in production.')
+let _jwtSecret: Uint8Array | null = null
+
+function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret
+  const raw = process.env.JWT_SECRET
+  if (!raw) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('[TaxMind] FATAL: JWT_SECRET environment variable is required in production.')
+    }
+    console.warn('[TaxMind] WARNING: JWT_SECRET is not set. Using an insecure default — this MUST be changed before deploying to production.')
+    _jwtSecret = new TextEncoder().encode('taxmind-pakistan-dev-only-insecure-key')
+  } else {
+    _jwtSecret = new TextEncoder().encode(raw)
+  }
+  return _jwtSecret
 }
-const JWT_SECRET = new TextEncoder().encode(
-  _JWT_SECRET_RAW || 'taxmind-pakistan-dev-only-insecure-key'
-)
 const COOKIE_NAME = 'taxmind-session'
 
 export interface SessionPayload {
@@ -27,12 +36,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export async function createToken(payload: Omit<SessionPayload, 'exp'>): Promise<string> {
-  // 7-day expiry
+  // 24-hour expiry
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
+    .setExpirationTime('24h')
     .setIssuedAt()
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
   return token
 }
 
@@ -48,7 +57,7 @@ export async function verifyToken(token: string): Promise<SessionPayload | null>
     } catch {
       // Not base64, use as-is
     }
-    const { payload } = await jwtVerify(actualToken, JWT_SECRET)
+    const { payload } = await jwtVerify(actualToken, getJwtSecret())
     return payload as unknown as SessionPayload
   } catch {
     return null
@@ -69,7 +78,7 @@ export async function setSessionCookie(token: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
+    maxAge: 60 * 60 * 24, // 24 hours
   })
 }
 

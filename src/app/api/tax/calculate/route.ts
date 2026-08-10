@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         minimumTax: result.minimumTax,
         totalTax: result.totalTax,
         effectiveRate: result.effectiveRate,
-        inputJson: body as Record<string, unknown>,
+        inputJson: parsed.data as unknown as Record<string, unknown>,
       },
     })
 

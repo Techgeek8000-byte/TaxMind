@@ -59,7 +59,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (user) {
-      // Existing user — link Google ID if not already set
+      // Security: Only auto-link Google if the user has no password (Google-created account)
+      // Users with existing passwords must link Google from account settings to prevent takeover
+      if (user.passwordHash && !user.googleId) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please sign in with your password, then link Google from account settings.' },
+          { status: 409 },
+        )
+      }
+      // Update existing Google-linked user
       user = await db.user.update({
         where: { id: user.id },
         data: {

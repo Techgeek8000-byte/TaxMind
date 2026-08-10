@@ -33,6 +33,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Admin-only: check user role
+    const { db } = await import('@/lib/db')
+    const user = await db.user.findUnique({
+      where: { id: session.userId },
+      select: { email: true },
+    })
+    const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map((e: string) => e.trim().toLowerCase())
+    if (!user || !ADMIN_EMAILS.includes(user.email.toLowerCase())) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
     const body = await request.json()
     const parsed = createGuideSchema.safeParse(body)
 

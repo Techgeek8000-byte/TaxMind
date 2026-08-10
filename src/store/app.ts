@@ -16,6 +16,9 @@ export type AppView =
   | 'wealth-statement'
   | 'tax-calendar'
   | 'ai-chat'
+  | 'ai-insights'
+  | 'ai-compare'
+  | 'ai-filing'
   | 'iris-export'
   | 'wht-calculator'
   | 'capital-gains'
@@ -31,7 +34,6 @@ interface AppState {
   view: AppView
   user: User | null
   loading: boolean
-  isLoading: boolean
   selectedGuideSlug: string | null
   sidebarOpen: boolean
   setView: (view: AppView) => void
@@ -46,16 +48,16 @@ export const useAppStore = create<AppState>((set) => ({
   view: 'landing',
   user: null,
   loading: true,
-  isLoading: false,
   selectedGuideSlug: null,
   sidebarOpen: true,
   setView: (view) => set({ view }),
   setUser: (user) => set({ user, loading: false }),
-  setLoading: (isLoading) => set({ isLoading }),
+  setLoading: (loading) => set({ loading }),
   setSelectedGuide: (slug) => set({ selectedGuideSlug: slug, view: 'guide-detail' }),
   toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
   logout: () => {
-    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {})
-    set({ user: null, view: 'landing' })
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      .catch(() => {})
+    set({ user: null, view: 'landing', selectedGuideSlug: null, sidebarOpen: true })
   },
 }))

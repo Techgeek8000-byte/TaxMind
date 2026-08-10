@@ -638,6 +638,79 @@ export async function analyzeDocument(
   }
 }
 
+// ── callAIWithContext — Multi-turn Chat with History ─────────────
+
+/**
+ * Multi-turn AI chat that supports conversation history and optional structured output.
+ * If `responseFormat` is 'json_object', the AI will be instructed to return valid JSON.
+ */
+export async function callAIWithContext(options: {
+  messages: ChatMessage[]
+  maxTokens?: number
+  temperature?: number
+  jsonMode?: boolean
+}): Promise<AIResponse> {
+  if (!hasAnyKey()) {
+    return { success: false, error: NO_KEY_MESSAGE }
+  }
+
+  const { messages, maxTokens = 3072, temperature = 0.7, jsonMode = false } = options
+
+  // If json mode, append instruction to the last user message
+  let finalMessages = messages
+  if (jsonMode) {
+    finalMessages = messages.map((m, i) => {
+      if (i === messages.length - 1 && m.role === 'user') {
+        const extra = '\n\nIMPORTANT: You MUST respond with ONLY valid JSON. No markdown fences, no extra text, no explanation. Return raw JSON only.'
+        return {
+          ...m,
+          content: typeof m.content === 'string' ? m.content + extra : m.content,
+        }
+      }
+      return m
+    })
+  }
+
+  let lastError: string | undefined
+  for (const provider of PROVIDERS) {
+    try {
+      const result = await callProviderChat(provider, finalMessages, temperature, maxTokens)
+      if (result.success) return result
+      lastError = result.error
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`[${provider.name}] chat error: ${msg}`)
+      lastError = msg
+    }
+  }
+
+  return { success: false, error: `All AI providers failed. Last error: ${lastError}` }
+}
+
+/**
+ * Generate an AI summary of a conversation for display/export.
+ */
+export async function generateConversationSummary(messages: ChatMessage[]): Promise<string> {
+  if (messages.length === 0) return 'No conversation to summarize.'
+
+  const summaryMessages: ChatMessage[] = [
+    {
+      role: 'system',
+      content:
+        'You are a concise summarizer. Summarize the following tax Q&A conversation in 2-4 sentences. Focus on key tax advice, ITO sections mentioned, and actionable takeaways. Use plain text, no markdown.',
+    },
+    {
+      role: 'user',
+      content: `Summarize this conversation:\n\n${messages
+        .map((m) => `${m.role === 'user' ? 'User' : 'AI'}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`)
+        .join('\n\n')}`,
+    },
+  ]
+
+  const result = await callAI(summaryMessages)
+  return result.success && result.data?.raw ? String(result.data.raw) : 'Could not generate summary.'
+}
+
 // ── Re-exported for backward compatibility ─────────────────────
 
 export type { ChatMessage, ContentPart, AIResponse }

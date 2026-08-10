@@ -46,6 +46,9 @@ import {
   Percent,
   TrendingUp,
   MoreHorizontal,
+  Sparkles,
+  FileCheck,
+  ArrowLeftRight,
 } from 'lucide-react'
 import { useAppStore, type AppView } from '@/store/app'
 
@@ -53,8 +56,6 @@ import { useAppStore, type AppView } from '@/store/app'
 const PRIMARY_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; tooltip: string }[] = [
   { label: 'Dashboard', view: 'dashboard', icon: <LayoutDashboard className="h-4 w-4" />, tooltip: 'Overview & KPIs' },
   { label: 'Tax Calculator', view: 'calculator', icon: <Calculator className="h-4 w-4" />, tooltip: 'Income Tax Calculator' },
-  { label: 'WHT Calculator', view: 'wht-calculator', icon: <Percent className="h-4 w-4" />, tooltip: 'Withholding Tax Calculator' },
-  { label: 'Capital Gains', view: 'capital-gains', icon: <TrendingUp className="h-4 w-4" />, tooltip: 'Capital Gains Tax' },
   { label: 'Savings Score', view: 'savings-score', icon: <Target className="h-4 w-4" />, tooltip: 'Tax Savings Analysis' },
   { label: 'AI Scanner', view: 'scanner', icon: <ScanLine className="h-4 w-4" />, tooltip: 'Document Scanner' },
   { label: 'AI Advisor', view: 'ai-chat', icon: <Bot className="h-4 w-4" />, tooltip: 'AI Tax Chat' },
@@ -63,6 +64,9 @@ const PRIMARY_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; 
 ]
 
 const MORE_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; group?: string }[] = [
+  { label: 'AI Insights', view: 'ai-insights', icon: <Sparkles className="h-4 w-4" />, group: 'AI Features' },
+  { label: 'AI Filing Guide', view: 'ai-filing', icon: <FileCheck className="h-4 w-4" />, group: 'AI Features' },
+  { label: 'Tax Year Compare', view: 'ai-compare', icon: <ArrowLeftRight className="h-4 w-4" />, group: 'AI Features' },
   { label: 'WHT Calculator', view: 'wht-calculator', icon: <Percent className="h-4 w-4" />, group: 'Calculators' },
   { label: 'Capital Gains', view: 'capital-gains', icon: <TrendingUp className="h-4 w-4" />, group: 'Calculators' },
   { label: 'Presumptive Tax', view: 'presumptive-tax', icon: <GitCompareArrows className="h-4 w-4" />, group: 'Calculators' },
