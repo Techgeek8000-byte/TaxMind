@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+enum DocumentStatus {
+  pending
+  processed
+  failed
+}
+
+enum IncomeHead {
+  salary
+  business
+  property
+  capital_gains
+  other
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  passwordHash   String?
+  googleId       String?   @unique
+  avatar         String?
+  company        String?
+  isActive       Boolean   @default(true)
+  isLocked       Boolean   @default(false)
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
+  lastLogin      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  documents       Document[]
+  taxCalculations TaxCalculation[]
+  auditLogs       AuditLog[]
+}
+
+model Document {
+  id           String        @id @default(cuid())
+  userId       String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  fileUrl      String?
+  extractedData Json?
+  status       DocumentStatus @default(pending)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+}
+
+model TaxCalculation {
+  id                   String      @id @default(cuid())
+  userId               String
+  taxYear              String
+  incomeHead           IncomeHead
+  grossIncome          Float
+  totalDeductions      Float
+  taxableIncome        Float
+  taxComputed          Float
+  superTax             Float       @default(0)
+  minimumTax           Float       @default(0)
+  totalTax             Float
+  effectiveRate        Float?
+  inputJson            Json
+  filingType           String?     @default("individual")
+  salaryIncome         Float?      @default(0)
+  businessIncome       Float?      @default(0)
+  propertyIncome       Float?      @default(0)
+  capitalGains         Float?      @default(0)
+  otherIncome          Float?      @default(0)
+  allowedDeductions    Json?       @default("[]")
+  taxCreditsApplied    Float?      @default(0)
+  taxPayable           Float?      @default(0)
+  taxAlreadyPaid       Float?      @default(0)
+  taxDue               Float?      @default(0)
+  optimizationStrategies Json?      @default("[]")
+  savingsAchieved      Float?      @default(0)
+  withholdingTax       Float?      @default(0)
+  superTaxBreakdown    Json?       @default("[]")
+  reportGenerated      Boolean?    @default(false)
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([taxYear])
+  @@index([incomeHead])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  resource  String?
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model TaxGuide {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  content     String
+  category    String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
