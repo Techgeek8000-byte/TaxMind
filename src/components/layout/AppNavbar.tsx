@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
@@ -53,7 +54,9 @@ import {
 import { useAppStore, type AppView } from '@/store/app'
 
 // ─── Navigation Configuration ─────────────────────────────────
-const PRIMARY_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; tooltip: string }[] = [
+type NavItem = { label: string; view: AppView; icon: React.ReactNode; tooltip?: string; group?: string }
+
+const PRIMARY_NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', view: 'dashboard', icon: <LayoutDashboard className="h-4 w-4" />, tooltip: 'Overview & KPIs' },
   { label: 'Tax Calculator', view: 'calculator', icon: <Calculator className="h-4 w-4" />, tooltip: 'Income Tax Calculator' },
   { label: 'Savings Score', view: 'savings-score', icon: <Target className="h-4 w-4" />, tooltip: 'Tax Savings Analysis' },
@@ -63,7 +66,7 @@ const PRIMARY_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; 
   { label: 'Tax Guides', view: 'guides', icon: <BookOpen className="h-4 w-4" />, tooltip: 'FBR Rules & Guides' },
 ]
 
-const MORE_NAV_ITEMS: { label: string; view: AppView; icon: React.ReactNode; group?: string }[] = [
+const MORE_NAV_ITEMS: NavItem[] = [
   { label: 'AI Insights', view: 'ai-insights', icon: <Sparkles className="h-4 w-4" />, group: 'AI Features' },
   { label: 'AI Filing Guide', view: 'ai-filing', icon: <FileCheck className="h-4 w-4" />, group: 'AI Features' },
   { label: 'Tax Year Compare', view: 'ai-compare', icon: <ArrowLeftRight className="h-4 w-4" />, group: 'AI Features' },
@@ -102,13 +105,13 @@ export default function AppNavbar() {
   const isMoreActive = MORE_NAV_ITEMS.some(i => i.view === view)
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 border-b border-border/50 shadow-sm">
       <div className="max-w-7xl mx-auto flex h-14 items-center px-4 sm:px-6">
         {/* ─── Sidebar Toggle (Desktop) ──────────────── */}
         <Button
           variant="ghost"
           size="icon"
-          className="mr-2 hidden lg:flex h-8 w-8"
+          className="mr-2 hidden lg:flex h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/[0.06] transition-base"
           onClick={toggleSidebar}
           title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
@@ -122,9 +125,9 @@ export default function AppNavbar() {
         {/* ─── Logo ──────────────────────────────────── */}
         <button
           onClick={() => navigate('dashboard')}
-          className="flex items-center gap-2 mr-4 sm:mr-6 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 mr-4 sm:mr-6 transition-base group"
         >
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center shadow-emerald transition-base group-hover:shadow-emerald-lg group-hover:scale-105">
             <Leaf className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-bold text-lg hidden sm:block">
@@ -139,11 +142,21 @@ export default function AppNavbar() {
               <Tooltip key={item.view}>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={view === item.view ? 'secondary' : 'ghost'}
+                    variant="ghost"
                     size="sm"
                     onClick={() => navigate(item.view)}
-                    className="gap-2 text-xs xl:text-sm"
+                    className={cn(
+                      "relative gap-2 text-xs xl:text-sm transition-base",
+                      view === item.view
+                        ? "text-primary bg-primary/[0.08]"
+                        : "text-muted-foreground hover:text-primary hover:bg-primary/[0.05]",
+                      !sidebarOpen && "hover:scale-105"
+                    )}
                   >
+                    {/* Active bottom accent bar with emerald gradient */}
+                    {view === item.view && (
+                      <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full bg-gradient-to-r from-primary via-emerald-400 to-primary" />
+                    )}
                     {item.icon}
                     {sidebarOpen && <span className="hidden xl:inline">{item.label}</span>}
                   </Button>
@@ -162,10 +175,20 @@ export default function AppNavbar() {
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant={isMoreActive ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="sm"
-                      className="gap-2 text-xs xl:text-sm"
+                      className={cn(
+                        "relative gap-2 text-xs xl:text-sm transition-base",
+                        isMoreActive
+                          ? "text-primary bg-primary/[0.08]"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/[0.05]",
+                        !sidebarOpen && "hover:scale-105"
+                      )}
                     >
+                      {/* Active bottom accent bar */}
+                      {isMoreActive && (
+                        <span className="absolute -bottom-px left-1/2 -translate-x-1/2 h-[2px] w-5 rounded-full bg-gradient-to-r from-primary via-emerald-400 to-primary" />
+                      )}
                       <MoreHorizontal className="h-4 w-4" />
                       {sidebarOpen && <span className="hidden xl:inline">More</span>}
                     </Button>
@@ -187,10 +210,21 @@ export default function AppNavbar() {
                       <DropdownMenuItem
                         key={item.view}
                         onClick={() => navigate(item.view)}
-                        className={view === item.view ? 'bg-secondary' : ''}
+                        className={cn(
+                          "gap-2 cursor-pointer transition-base",
+                          view === item.view
+                            ? "text-primary bg-primary/[0.08]"
+                            : "text-muted-foreground/80 hover:text-primary"
+                        )}
                       >
-                        <span className="mr-2 text-primary/70">{item.icon}</span>
-                        <span>{item.label}</span>
+                        <span className={cn(
+                          "transition-base",
+                          view === item.view ? "text-primary" : "text-primary/50"
+                        )}>{item.icon}</span>
+                        <span className="flex-1">{item.label}</span>
+                        {view === item.view && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        )}
                       </DropdownMenuItem>
                     ))}
                     {groupIdx < Object.keys(GROUPED_MORE).length - 1 && (
@@ -207,9 +241,9 @@ export default function AppNavbar() {
         <div className="flex items-center gap-2 ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+              <Button variant="ghost" className="relative h-9 w-9 rounded-full hover:ring-2 hover:ring-primary/20 transition-base">
                 <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-primary/20 text-primary text-sm font-semibold">
+                  <AvatarFallback className="bg-primary/15 text-primary text-sm font-semibold ring-1 ring-primary/20">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -221,52 +255,113 @@ export default function AppNavbar() {
                 <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('dashboard')}>
+              <DropdownMenuItem onClick={() => navigate('dashboard')} className="cursor-pointer">
                 <User className="mr-2 h-4 w-4" />
                 Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive">
+              <DropdownMenuItem onClick={logout} className="text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* ─── Mobile Sheet ────────────────────────── */}
+          {/* ─── Mobile Sheet (Sidebar) ─────────────── */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild className="lg:hidden">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hover:text-primary transition-base">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-72 p-0">
-              <div className="flex items-center gap-2 px-4 py-4 border-b">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                  <Leaf className="h-4 w-4 text-primary-foreground" />
+            <SheetContent
+              side="left"
+              className="w-72 p-0 bg-background/95 backdrop-blur-xl border-r border-border/50"
+            >
+              {/* ── Sheet Header ── */}
+              <div className="flex items-center gap-3 px-5 py-5 border-b border-border/40">
+                <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-emerald">
+                  <Leaf className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="font-bold text-lg">TaxMind</span>
+                <div>
+                  <span className="font-bold text-lg tracking-tight">TaxMind</span>
+                  <p className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">Pakistan</p>
+                </div>
               </div>
-              <ScrollArea className="h-[calc(100vh-10rem)]">
-                <nav className="p-3 space-y-1">
-                  {allItems.map((item) => (
-                    <Button
-                      key={item.view}
-                      variant={view === item.view ? 'secondary' : 'ghost'}
-                      className="w-full justify-start gap-3"
-                      onClick={() => navigate(item.view)}
-                    >
-                      {item.icon}
-                      {item.label}
-                    </Button>
-                  ))}
+
+              {/* ── Sheet Navigation ── */}
+              <ScrollArea className="h-[calc(100vh-12rem)]">
+                <nav className="p-3 space-y-0.5">
+                  {allItems.map((item, idx) => {
+                    const prevGroup = idx > 0 ? allItems[idx - 1].group : null
+                    const currGroup = item.group || null
+                    const showSep = idx > 0 && currGroup !== prevGroup
+                    const isActive = view === item.view
+
+                    return (
+                      <div key={item.view}>
+                        {/* Group separator with centered label */}
+                        {showSep && (
+                          <div className="flex items-center gap-2 px-3 py-2">
+                            <div className="h-px flex-1 bg-border/30" />
+                            {currGroup && (
+                              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/50 whitespace-nowrap">
+                                {currGroup}
+                              </span>
+                            )}
+                            <div className="h-px flex-1 bg-border/30" />
+                          </div>
+                        )}
+                        <Button
+                          variant="ghost"
+                          className={cn(
+                            "w-full justify-start gap-3 relative pl-4 transition-base rounded-lg h-9",
+                            isActive
+                              ? "text-primary bg-primary/[0.08] hover:bg-primary/[0.1]"
+                              : "text-muted-foreground hover:text-primary hover:bg-primary/[0.05] hover:scale-[1.01] active:scale-[0.99]"
+                          )}
+                          onClick={() => navigate(item.view)}
+                        >
+                          {/* Active left accent bar with emerald gradient */}
+                          {isActive && (
+                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-gradient-to-b from-primary via-emerald-400 to-primary" />
+                          )}
+                          <span className={cn(
+                            "transition-base",
+                            isActive ? "text-primary" : "text-muted-foreground/70"
+                          )}>{item.icon}</span>
+                          <span className="text-sm">{item.label}</span>
+                        </Button>
+                      </div>
+                    )
+                  })}
                 </nav>
               </ScrollArea>
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t">
-                <Button variant="outline" className="w-full justify-start gap-2" onClick={logout}>
-                  <LogOut className="h-4 w-4" />
-                  Log out
-                </Button>
+
+              {/* ── Sheet User Info (Glass Card) ── */}
+              <div className="absolute bottom-0 left-0 right-0 p-3">
+                <div className="rounded-xl p-3 bg-[var(--glass-bg)] backdrop-blur-[var(--glass-blur)] border border-[var(--glass-border)] shadow-sm">
+                  <div className="flex items-center gap-3 mb-2.5">
+                    <Avatar className="h-9 w-9 ring-2 ring-primary/15">
+                      <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{user?.name || 'User'}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/[0.06] transition-base rounded-lg h-8 text-xs"
+                    onClick={logout}
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                    Log out
+                  </Button>
+                </div>
               </div>
             </SheetContent>
           </Sheet>

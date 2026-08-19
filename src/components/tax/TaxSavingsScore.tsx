@@ -234,7 +234,7 @@ export default function TaxSavingsScore() {
     watch,
     formState: { errors },
   } = useForm<SavingsFormData>({
-    resolver: zodResolver(savingsFormSchema),
+    resolver: zodResolver(savingsFormSchema) as any,
     defaultValues: {
       grossIncome: undefined,
       incomeHead: 'salary',

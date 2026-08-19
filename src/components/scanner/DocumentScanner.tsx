@@ -40,7 +40,7 @@ import type { TaxInput } from '@/lib/tax-engine'
 interface ExtractedField {
   key: string
   label: string
-  value: string
+  value?: string
 }
 
 interface DeductionSuggestion {

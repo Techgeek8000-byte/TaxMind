@@ -204,7 +204,7 @@ export default function PresumptiveTaxCalculator() {
     watch,
     formState: { errors },
   } = useForm<PresumptiveFormData>({
-    resolver: zodResolver(presumptiveFormSchema),
+    resolver: zodResolver(presumptiveFormSchema) as any,
     defaultValues: {
       income: undefined,
       category: 'service_provider',

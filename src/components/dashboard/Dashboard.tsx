@@ -158,7 +158,7 @@ export default function Dashboard() {
   const greeting = getGreeting()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50/30 dark:from-slate-950 dark:to-emerald-950/20">
+    <div className="app-shell-bg min-h-screen">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {/* ─── Welcome Header ─────────────────────────────── */}
         <motion.div
@@ -198,7 +198,7 @@ export default function Dashboard() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {loading
                 ? Array.from({ length: 4 }).map((_, i) => (
-                    <Card key={i} className="p-6">
+                    <Card key={i} className="glass-card p-6">
                       <Skeleton className="mb-3 h-10 w-10 rounded-lg" />
                       <Skeleton className="mb-2 h-4 w-24" />
                       <Skeleton className="h-8 w-32" />
@@ -242,10 +242,10 @@ export default function Dashboard() {
                         }
                         label="Account Security"
                         value={
-                          stats?.securityStatus.isLocked
+                          stats?.securityStatus?.isLocked
                             ? 'Locked'
-                            : stats?.securityStatus.failedAttempts > 0
-                              ? `${stats.securityStatus.failedAttempts} failed attempt(s)`
+                            : (stats?.securityStatus?.failedAttempts ?? 0) > 0
+                              ? `${stats!.securityStatus!.failedAttempts} failed attempt(s)`
                               : 'Secure'
                         }
                         variant="text"
@@ -314,14 +314,14 @@ export default function Dashboard() {
                           </TableHeader>
                           <TableBody>
                             {stats.recentCalculations.map((calc) => (
-                              <TableRow key={calc.id}>
-                                <TableCell className="text-xs text-muted-foreground">
+                              <TableRow key={calc.id} className="even:bg-muted/30 hover:bg-primary/5 transition-colors">
+                                <TableCell className="py-3 px-4 text-xs text-muted-foreground">
                                   {formatDate(calc.createdAt)}
                                 </TableCell>
-                                <TableCell className="font-medium">
+                                <TableCell className="py-3 px-4 font-medium">
                                   {calc.taxYear}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="py-3 px-4">
                                   <Badge
                                     variant="secondary"
                                     className={incomeHeadColor(calc.incomeHead)}
@@ -329,13 +329,13 @@ export default function Dashboard() {
                                     {incomeHeadLabel(calc.incomeHead)}
                                   </Badge>
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm">
+                                <TableCell className="py-3 px-4 text-right font-mono text-sm">
                                   {formatCurrency(calc.grossIncome)}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm font-medium">
+                                <TableCell className="py-3 px-4 text-right font-mono text-sm font-medium">
                                   {formatCurrency(calc.totalTax)}
                                 </TableCell>
-                                <TableCell className="text-right text-sm">
+                                <TableCell className="py-3 px-4 text-right text-sm">
                                   {calc.effectiveRate.toFixed(1)}%
                                 </TableCell>
                               </TableRow>
@@ -350,7 +350,8 @@ export default function Dashboard() {
 
               {/* Security Status Card */}
               <motion.div variants={itemVariants}>
-                <Card className="h-full">
+                <Card className="glass-card relative h-full overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 pointer-events-none" />
                   <CardHeader>
                     <CardTitle className="text-lg">Security Status</CardTitle>
                     <CardDescription>Your account protection overview</CardDescription>
@@ -495,7 +496,7 @@ function StatCard({
         : (value as string)
 
   return (
-    <Card className="p-4">
+    <Card className="glass-card p-4 transition-slow hover:shadow-emerald-lg hover:-translate-y-0.5">
       <div className="flex items-start gap-3">
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
           {icon}
@@ -534,7 +535,7 @@ function QuickAction({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-all hover:shadow-md hover:-translate-y-0.5 ${
+      className={`flex items-start gap-3 rounded-lg border p-4 text-left transition-slow hover:scale-[1.02] hover:shadow-emerald-lg hover:backdrop-blur-xl ${
         primary
           ? 'border-primary/30 bg-primary/5 hover:bg-primary/10'
           : 'hover:bg-muted/80'

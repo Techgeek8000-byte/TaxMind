@@ -21,7 +21,7 @@ interface FloatingMsg {
 const dotBounce = {
   animate: (i: number) => ({
     y: [0, -4, 0],
-    transition: { duration: 0.35, repeat: Infinity, delay: i * 0.1, ease: 'easeInOut' },
+    transition: { duration: 0.35, repeat: Infinity, delay: i * 0.1, ease: 'easeInOut' as const },
   }),
 }
 

@@ -68,6 +68,9 @@ export async function POST(request: NextRequest) {
       ntn: taxpayerInfo.ntn,
       name: taxpayerInfo.name,
       cnic: taxpayerInfo.cnic,
+      incomeHead: 'salary',
+      taxYear: new Date().getFullYear().toString(),
+      grossIncome: taxResult.grossIncome,
     })
 
     const taxYear = new Date().getFullYear().toString()

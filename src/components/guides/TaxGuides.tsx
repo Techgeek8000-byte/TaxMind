@@ -22,7 +22,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 
@@ -424,15 +423,14 @@ export default function TaxGuides() {
           </div>
 
           {/* Category Tabs */}
-          <ScrollArea className="w-full" orientation="horizontal">
-            <Tabs
-              value={activeCategory}
-              onValueChange={setActiveCategory}
-              className="w-full"
-            >
-              <TabsList className="flex w-full flex-wrap gap-1 bg-emerald-100/60 p-1 h-auto">
-                {GUIDE_CATEGORIES.map((cat) => {
-                  const Icon = cat.icon || BookOpen
+          <Tabs
+            value={activeCategory}
+            onValueChange={setActiveCategory}
+            className="w-full"
+          >
+            <TabsList className="flex w-full flex-wrap gap-1 bg-emerald-100/60 p-1 h-auto">
+              {GUIDE_CATEGORIES.map((cat) => {
+                const Icon = 'icon' in cat && cat.icon ? cat.icon : BookOpen
                   return (
                     <TabsTrigger
                       key={cat.value}
@@ -446,7 +444,6 @@ export default function TaxGuides() {
                 })}
               </TabsList>
             </Tabs>
-          </ScrollArea>
         </motion.div>
 
         {/* Loading State */}

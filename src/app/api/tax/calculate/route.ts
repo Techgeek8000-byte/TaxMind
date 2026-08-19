@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { getSession } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
 import { calculateTax, type IncomeHead } from '@/lib/tax-engine'
@@ -64,7 +65,7 @@ export async function POST(request: NextRequest) {
         minimumTax: result.minimumTax,
         totalTax: result.totalTax,
         effectiveRate: result.effectiveRate,
-        inputJson: parsed.data as unknown as Record<string, unknown>,
+        inputJson: parsed.data as unknown as Prisma.InputJsonValue,
       },
     })
 

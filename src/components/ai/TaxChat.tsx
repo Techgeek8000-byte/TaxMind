@@ -54,7 +54,7 @@ const dotBounce = {
       duration: 0.5,
       repeat: Infinity,
       delay: i * 0.15,
-      ease: 'easeInOut',
+      ease: 'easeInOut' as const,
     },
   }),
 }

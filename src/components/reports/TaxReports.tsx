@@ -160,14 +160,14 @@ function generateReportHTML(
 
   const deductionRows = deductionFields
     .filter(([, key]) => {
-      const val = (input as Record<string, unknown>)[key]
+      const val = (input as unknown as Record<string, unknown>)[key]
       return val && Number(val) > 0
     })
     .map(
       ([label, key]) => `
       <tr>
         <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;">${label}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">PKR ${formatNum(Number((input as Record<string, unknown>)[key]))}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">PKR ${formatNum(Number((input as unknown as Record<string, unknown>)[key]))}</td>
       </tr>`
     )
     .join('')

@@ -9,7 +9,7 @@ const compareBodySchema = z.object({
   taxYear2: z.string().regex(/^\d{4}$/),
   incomeHead: z.string().optional(),
   entityType: z.string().optional(),
-  deductions: z.record(z.number()).optional(),
+  deductions: z.record(z.string(), z.number()).optional(),
 })
 
 const COMPARE_SYSTEM_PROMPT = `You are TaxMind AI, an expert Pakistani tax analyst. You compare tax liabilities between two tax years under FBR ITO 2001.
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     const deductionsStr = deductions
       ? Object.entries(deductions)
-          .map(([k, v]) => `${k}: PKR ${v.toLocaleString()}`)
+          .map(([k, v]) => `${k}: PKR ${(v as number).toLocaleString()}`)
           .join(', ')
       : 'None specified'
 

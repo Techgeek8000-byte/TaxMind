@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     let userContext = ''
     try {
       const calcs = await db.taxCalculation.findMany({
-        where: { userId: session.id },
+        where: { userId: session.userId },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {

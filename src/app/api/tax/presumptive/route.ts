@@ -3,7 +3,6 @@ import { z } from 'zod'
 import {
   calculatePresumptiveTax,
   calculateTax,
-  type PresumptiveTaxCategory,
 } from '@/lib/tax-engine'
 import { getSession } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
@@ -11,21 +10,19 @@ import { db } from '@/lib/db'
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
-const VALID_CATEGORIES: PresumptiveTaxCategory[] = [
-  'retailer',
-  'wholesaler',
-  'distributor',
-  'service_provider',
-  'rice_mill',
-  'maize_mill',
-  'cotton_mill',
-  'commercial_import',
-]
-
 const presumptiveBodySchema = z.object({
   income: z.number().nonnegative('Income must be non-negative'),
-  category: z.enum(VALID_CATEGORIES, {
-    errorMap: () => ({ message: `Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}` }),
+  category: z.enum([
+    'retailer',
+    'wholesaler',
+    'distributor',
+    'service_provider',
+    'rice_mill',
+    'maize_mill',
+    'cotton_mill',
+    'commercial_import',
+  ] as const, {
+    message: 'Invalid category',
   }),
 })
 

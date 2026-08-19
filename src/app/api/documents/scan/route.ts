@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { verifyAuth } from '@/lib/auth'
 import { logAudit } from '@/lib/audit'
 import { analyzeDocument, guessDocType } from '@/lib/ai'
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
         data: {
           status: 'failed',
           extractedData: {
-            ...data,
-            _scanResult: extraction,
+            ...(data as Record<string, unknown>),
+            _scanResult: extraction as unknown as Prisma.InputJsonValue,
             _scanError: extraction.summary || 'AI scan returned no useful data',
           },
         },
@@ -140,7 +141,7 @@ export async function POST(request: NextRequest) {
     })
 
     // --- Return extraction results (strip _fileContent from response) ---
-    const { _fileContent: _, ...responseExtraction } = updatedExtractedData
+    const { _fileContent: _, ...responseExtraction } = updatedExtractedData as Record<string, unknown>
 
     return NextResponse.json({
       id: updated.id,

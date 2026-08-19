@@ -142,7 +142,7 @@ const taxFormSchema = z.object({
   sec64DEmployerProvidentFund: z.coerce.number().min(0).optional().default(0),
   sec64EEmployeeOldAge: z.coerce.number().min(0).optional().default(0),
   // Deduction toggles
-  deductionEnabled: z.record(z.boolean()).optional().default({}),
+  deductionEnabled: z.record(z.string(), z.boolean()).optional().default({}),
   // Business specific (enhanced)
   cogs: z.coerce.number().min(0).optional().default(0),
   depreciation: z.coerce.number().min(0).optional().default(0),
@@ -209,10 +209,11 @@ export default function TaxCalculator() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     reset,
     formState: { errors },
   } = useForm<TaxFormData>({
-    resolver: zodResolver(taxFormSchema),
+    resolver: zodResolver(taxFormSchema) as any,
     defaultValues: {
       incomeHead: 'salary',
       grossIncome: undefined,
@@ -307,10 +308,11 @@ export default function TaxCalculator() {
           const fieldName = DEDUCTION_FIELD_MAP[section.section]
           if (fieldName && data[fieldName]) {
             setValue(fieldName as keyof TaxFormData, data[fieldName])
-            setValue('deductionEnabled', (prev: Record<string, boolean> = {}) => ({
+            const prev = (getValues('deductionEnabled') || {}) as Record<string, boolean>
+            setValue('deductionEnabled', {
               ...prev,
               [section.section]: true,
-            }))
+            })
           }
         }
         sessionStorage.removeItem('taxmind_scanner_input')

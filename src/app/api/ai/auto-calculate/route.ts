@@ -7,7 +7,7 @@ import { calculateTax, type TaxInput, type TaxResult } from '@/lib/tax-engine'
 // ─── Schemas ────────────────────────────────────────────────────────
 
 const autoCalcSchema = z.object({
-  extractedData: z.record(z.unknown()),
+  extractedData: z.record(z.string(), z.unknown()),
   documentType: z.string().optional(),
   fileName: z.string().optional(),
 })

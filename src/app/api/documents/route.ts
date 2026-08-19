@@ -31,12 +31,13 @@ export async function GET() {
     })
 
     // Strip base64 file content from list response to reduce payload size
-    const sanitized = documents.map((doc) => ({
-      ...doc,
-      extractedData: doc.extractedData
-        ? { ...doc.extractedData, _fileContent: undefined }
-        : doc.extractedData,
-    }))
+    const sanitized = documents.map((doc) => {
+      const { extractedData, ...rest } = doc
+      const cleanData = extractedData
+        ? { ...(extractedData as Record<string, unknown>), _fileContent: undefined }
+        : extractedData
+      return { ...rest, extractedData: cleanData }
+    })
 
     return NextResponse.json(sanitized)
   } catch (error) {
@@ -150,9 +151,10 @@ export async function POST(request: NextRequest) {
 
     // Return document metadata without the base64 file content
     const { extractedData: rawExtracted, ...docWithoutFileContent } = document
+    const extractedDataRaw = rawExtracted as Record<string, unknown> | null
     return NextResponse.json({ ...docWithoutFileContent, extractedData: {
-      _mimeType: rawExtracted?._mimeType,
-      _guessedDocType: rawExtracted?._guessedDocType,
+      _mimeType: extractedDataRaw?._mimeType as string | undefined,
+      _guessedDocType: extractedDataRaw?._guessedDocType as string | undefined,
     }}, { status: 201 })
   } catch (error) {
     console.error('Document upload error:', error)

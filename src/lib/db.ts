@@ -1,22 +1,13 @@
 import { PrismaClient } from '@prisma/client'
 
-// Lazy Prisma client via JS Proxy (avoids DATABASE_URL at build time)
-function makeLazyPrismaClient() {
-  let _prisma: PrismaClient | null = null
-  return new Proxy({} as PrismaClient, {
-    get(_target, prop) {
-      if (!_prisma) {
-        _prisma = new PrismaClient({
-          log: process.env.NODE_ENV === 'development' ? ['query'] : [],
-        })
-      }
-      const value = (_prisma as Record<string | symbol, unknown>)[prop]
-      if (typeof value === 'function') {
-        return value.bind(_prisma)
-      }
-      return value
-    },
-  })
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
 }
 
-export const db = makeLazyPrismaClient()
+export const db =
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    log: ['query'],
+  })
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
